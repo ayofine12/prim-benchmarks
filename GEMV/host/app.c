@@ -95,12 +95,15 @@ int main(int argc, char **argv) {
 	}
 
 	i = 0;
+
+	uint32_t rows_per_dpu;
+	uint32_t prev_rows_dpu = 0;
+	uint32_t chunks = m_size / nr_of_dpus;
+	uint32_t rest_rows = m_size % nr_of_dpus;
+	uint32_t rows_per_dpu_pad = 0;
+
 	DPU_FOREACH(dpu_set, dpu, i) {
-		uint32_t rows_per_dpu;
-		uint32_t prev_rows_dpu = 0;
-		uint32_t chunks = m_size / nr_of_dpus;
 		rows_per_dpu = chunks;
-		uint32_t rest_rows = m_size % nr_of_dpus;
 		if (i < rest_rows)
 			rows_per_dpu++;
 		if (rest_rows > 0) {
@@ -113,7 +116,7 @@ int main(int argc, char **argv) {
 		}
 
 		// Keep max rows for parallel transfers
-		uint32_t rows_per_dpu_pad = rows_per_dpu;
+		rows_per_dpu_pad = rows_per_dpu;
 		if (rows_per_dpu_pad % 2 == 1) // 4-byte elements
 			rows_per_dpu_pad++;
 		if (rows_per_dpu_pad > max_rows_per_dpu)
@@ -144,9 +147,6 @@ int main(int argc, char **argv) {
 	gemv_host(C, A, B, m_size, n_size);
 	stop(&timer, 0);
 	for (unsigned int rep = 0; rep < p.n_warmup + p.n_reps; rep++) {
-
-
-
 		if (rep >= p.n_warmup)
 			start(&timer, 1, rep - p.n_warmup);
 		// Input arguments
@@ -166,6 +166,8 @@ int main(int argc, char **argv) {
 			DPU_ASSERT(dpu_prepare_xfer(dpu, A + dpu_info[i].prev_rows_dpu * n_size));
 		}
 		DPU_ASSERT(dpu_push_xfer(dpu_set, DPU_XFER_TO_DPU, DPU_MRAM_HEAP_POINTER_NAME, 0, max_rows_per_dpu * n_size_pad * sizeof(T), DPU_XFER_DEFAULT));
+		
+		i = 0;
 		DPU_FOREACH(dpu_set, dpu, i) {
 			DPU_ASSERT(dpu_prepare_xfer(dpu, B));
 		}

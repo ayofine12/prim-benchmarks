@@ -2,7 +2,15 @@ import os
 import sys
 import getpass
 
-rootdir = "/" # Include path to repo
+import debugpy
+
+# Listen for the debugger
+debugpy.listen(("0.0.0.0", 5678))  # You can use a different port if needed
+print("Waiting for debugger to attach...")
+debugpy.wait_for_client()  # Pause execution until the debugger is attached
+debugpy.breakpoint()  # Optional: Add breakpoints here
+
+rootdir = "/home/mwnoh/prim-benchmarks" # Include path to repo
 
 applications = {"VA"       : ["NR_DPUS=X NR_TASKLETS=Y BL=Z make all", "./bin/host_code -w 0 -e 1 -i #elements -x 0"],
                 "GEMV"     : ["NR_DPUS=X NR_TASKLETS=Y BL=Z make all", "./bin/gemv_host -m #elements -n 2048"],

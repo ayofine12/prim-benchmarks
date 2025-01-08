@@ -58,16 +58,12 @@ int main() {
 		rows_per_tasklet += element_per_cacheC;
 	if (rest_rows > 0) {
 		if ((tasklet_id * element_per_cacheC) >= rest_rows) {
-			// unsigned int hlf_rest_rows = rest_rows >> 1;
 			if ((rest_rows % element_per_cacheC) != 0)
 				start_row = roundup(rest_rows, element_per_cacheC) + tasklet_id * dbl_chunks; 
-				// start_row = (hlf_rest_rows + 1) * (dbl_chunks + 2) + (tasklet_id - 1 - hlf_rest_rows) * dbl_chunks;
 			else
 				start_row = rest_rows + tasklet_id * dbl_chunks; 
-				// start_row = (hlf_rest_rows) * (dbl_chunks + 2) + (tasklet_id - hlf_rest_rows) * dbl_chunks;
 		} else 
 			start_row = tasklet_id * (dbl_chunks + element_per_cacheC);
-			// start_row = tasklet_id * (dbl_chunks + 2);
 	} else {
 		start_row = tasklet_id * (dbl_chunks);
 	}
@@ -93,23 +89,15 @@ int main() {
 	#endif
 
 	// Iterate over nr_rows
-	// for (unsigned int i = start_row; i < start_row + rows_per_tasklet; i += 2) {
 	for (unsigned int i = start_row; i < start_row + rows_per_tasklet; i += element_per_cacheC) {
 
 		mram_temp_addr_A = (uint32_t) (DPU_MRAM_HEAP_POINTER + i * n_size * sizeof(T));
 		mram_temp_addr_B = mram_base_addr_B;
 
-		// cache_C[0] = 0;
-		// cache_C[1] = 0;
-
-		// clear the cache
 		for(unsigned int c = 0; c < element_per_cacheC; c++){
 			cache_C[c] = 0; 
 		}
 
-		// for(unsigned int pos = 0; pos < 2 && i + pos < nr_rows; pos++){
-		// for(unsigned int pos = 0; (pos < element_per_cacheC) && ((i + pos) < (start_row + rows_per_tasklet)); pos++){
-		// for(unsigned int pos = 0; pos < element_per_cacheC && i + pos < nr_rows; pos++){ 
 		for(unsigned int pos = 0; pos < element_per_cacheC; pos++){ 
 			if(i + pos >= nr_rows){
 				// printf("id: %d, nrows: %d, error\n", tasklet_id, nrows);
@@ -189,7 +177,6 @@ int main() {
 		mram_write(cache_C, (__mram_ptr void *) (mram_base_addr_C), 8);
 
 		// Update memory address
-		// mram_base_addr_C += 2 * sizeof(T);
 		mram_base_addr_C += 8; 
 
 	}
